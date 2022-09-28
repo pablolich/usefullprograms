@@ -19,21 +19,44 @@ def GLV(t, x, A, rho, tol):
         rho (nx1): Species growth rates
         tol (float): solution precision
     '''
-    dxdt = (x*(rho + A@x)).T
-    print(dxdt)
-    if any(dxdt > 1e100):
-        import ipdb; ipdb.set_trace(context = 20)
-    return dxdt 
+    return (x*(rho + A@x)).T
+
+def GLV_hoi(t, x, A, B, rho, tol):
+    '''
+    n-species Generalized Lotka-Volterra with higher order interactions
+
+    Parameters:
+        x (nx1): Species abundances
+        A (nxn): Interactions matrix
+        B (nxnxn): Higher order interactions matrix
+        rho (nx1): Species growth rates
+        tol (float): solution precision
+    '''
+    #Create used vectors
+    n = len(x)
+    Ax = A@x
+    xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
+    dxdt = [rho[i] + Ax[i] + xBx[i] for i in range(n)]
+    return np.array(dxdt)
+
+#Test
+#r = np.random.uniform(size=3)
+#A = np.random.uniform(size=(3, 3))
+#B = np.array([[[1, 2, 3], [1,2,3], [1,2,3]],
+             #[[4,5,6], [4,5,6], [4,5,6]],
+             #[[7,8,9], [7,8,9], [7,8,9]]])
+#GLV_hoi(1, np.ones(3), A, B, r, 1e-6)
 
 ###############################################################################
 
 ###############################################################################
 #CLASSES
 class Community:
-    def __init__(self, n, model, A=None, C=None, D=None, r=None, rho=None, 
-                 d=None, l=None):
+    def __init__(self, n, model, A=None, B=None, C=None, D=None, r=None,
+                 rho=None, d=None, l=None):
         self.n = n #end-point abundances vector
-        self.A = A #competition matrix
+        self.A = A #interaction matrix
+        self.B = B #higher order interaction matrix
         self.C = C #resource preferences matrix
         self.D = D #crossfeeding matrix 
         self.r = r #resource growth rate
