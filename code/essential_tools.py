@@ -19,7 +19,9 @@ def GLV(t, x, A, rho, tol):
         rho (nx1): Species growth rates
         tol (float): solution precision
     '''
-    return (x*(rho + A@x)).T
+    dxdt = (x*(rho + A@x)).T
+    print(dxdt)
+    return dxdt
 
 def GLV_hoi(t, x, A, B, rho, tol):
     '''
@@ -33,10 +35,12 @@ def GLV_hoi(t, x, A, B, rho, tol):
         tol (float): solution precision
     '''
     #Create used vectors
+    dxdt_glv = (x*(rho + A@x)).T
     n = len(x)
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
     dxdt = x*np.array([rho[i] + Ax[i] + xBx[i] for i in range(n)])
+    print('GLV', dxdt_glv)
     return dxdt
 
 ##Test
@@ -78,7 +82,7 @@ class Community:
         if self.model.__name__ == 'GLV':
             if not t_dynamics:
                 #integrate using lemke-howson algorithm
-                n_eq = lemke_howson_wrapper(-self.A, self.rho)
+                n_eq = lemke_howson_wrapper(self.A, self.rho)
                 #if it fails, use numerical integration
                 if all(n_eq==0):
                     sol = prune_community(self.model, self.n,
@@ -93,7 +97,6 @@ class Community:
                     self.n = n_eq
             else: 
                 #integrate using numerical integration
-                print('integrating system...')
                 sol = prune_community(self.model, self.n,
                                       args=(self.A, self.rho, tol), 
                                       events=single_extinction,
@@ -114,6 +117,21 @@ class Community:
             self.presence[ind_ext] = False
             #update richness
             self.richness -= len(ind_ext) #update richness 
+        elif self.model.__name__ == 'GLV_hoi':
+            sol = prune_community(self.model, self.n,
+                                  args=(self.A, self.B, self.rho, tol), 
+                                  events=single_extinction,
+                                  t_dynamics=t_dynamics)
+            if not sol:
+                self.converged = False
+                return self
+            #store temporal dynamics
+            self.t = cumulative_storing(self.t, sol.t, time = True)
+            #make 1 dimensional again
+            self.t = self.t[0]
+            self.abundances_t = cumulative_storing(self.abundances_t, 
+                                                    sol.y)
+            self.n = sol.y[:, -1]
         else:
             print("model not available")
             raise ValueError
@@ -250,10 +268,13 @@ class Community:
 ###############################################################################
 #INTEGRATION
 def lemke_howson_wrapper(A, r):
-    np.savetxt('../data/A.csv', A, delimiter=',')
-    np.savetxt('../data/r.csv', r, delimiter=',')
-    os.system('Rscript call_lr.r')
-    x = np.loadtxt('../data/equilibrium.csv', delimiter=',')
+    np.savetxt('/home/pablo/Desktop/usefulprograms/data/A.csv', A, 
+               delimiter=',')
+    np.savetxt('/home/pablo/Desktop/usefulprograms/data/r.csv', r,
+               delimiter=',')
+    os.system('Rscript /home/pablo/Desktop/usefulprograms/code/call_lr.r')
+    x = np.loadtxt('/home/pablo/Desktop/usefulprograms/data/equilibrium.csv', 
+                   delimiter=',')
     #make sure I get an array-like object
     try: len(x)
     except: x = np.array([x])
