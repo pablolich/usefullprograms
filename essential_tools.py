@@ -36,16 +36,16 @@ def GLV_hoi(t, x, A, B, rho, tol):
     n = len(x)
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
-    dxdt = [rho[i] + Ax[i] + xBx[i] for i in range(n)]
-    return np.array(dxdt)
+    dxdt = x*np.array([rho[i] + Ax[i] + xBx[i] for i in range(n)])
+    return dxdt
 
-#Test
+##Test
 #r = np.random.uniform(size=3)
 #A = np.random.uniform(size=(3, 3))
 #B = np.array([[[1, 2, 3], [1,2,3], [1,2,3]],
-             #[[4,5,6], [4,5,6], [4,5,6]],
-             #[[7,8,9], [7,8,9], [7,8,9]]])
-#GLV_hoi(1, np.ones(3), A, B, r, 1e-6)
+#            [[4,5,6], [4,5,6], [4,5,6]],
+#            [[7,8,9], [7,8,9], [7,8,9]]])
+#GLV_hoi(1, np.array([1, 2, 3,]), A, B, r, 1e-6)
 
 ###############################################################################
 
