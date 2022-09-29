@@ -20,7 +20,8 @@ def GLV(t, x, A, rho, tol):
         tol (float): solution precision
     '''
     dxdt = (x*(rho + A@x)).T
-    print(dxdt)
+    if all(x==1):
+        print(dxdt)
     return dxdt
 
 def GLV_hoi(t, x, A, B, rho, tol):
@@ -36,11 +37,12 @@ def GLV_hoi(t, x, A, B, rho, tol):
     '''
     #Create used vectors
     dxdt_glv = (x*(rho + A@x)).T
+    if all(x==1):
+        print(dxdt_glv)
     n = len(x)
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
     dxdt = x*np.array([rho[i] + Ax[i] + xBx[i] for i in range(n)])
-    print('GLV', dxdt_glv)
     return dxdt
 
 ##Test
@@ -280,7 +282,7 @@ def lemke_howson_wrapper(A, r):
     except: x = np.array([x])
     return x
 
-def single_extinction(t, n, A, r, tol):
+def single_extinction(t, n, A, B, r, tol):
     n = n[n!=0]
     return np.any(abs(n) < tol) -1
 
@@ -317,6 +319,7 @@ def prune_community(fun, x0, args, events=(single_extinction, is_varying),
     t_vec = np.array([0])
     while varying:
         try:
+            import ipdb; ipdb.set_trace(context = 20)
             sol = solve_ivp(fun, t_span, x0, events=events, args=args, 
                             method='BDF') 
             #store times and abundances
