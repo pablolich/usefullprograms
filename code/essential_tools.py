@@ -42,6 +42,7 @@ def GLV_hoi(t, x, args):
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
     dxdt = x*np.array([rho[i] + Ax[i] + xBx[i] for i in range(n)])
+    print('Time: ', t)
     return dxdt
 
 ##Test
@@ -88,7 +89,6 @@ class Community:
                 if all(n_eq==0):
                     sol = prune_community(self.model, self.n,
                                           args=((self.A, self.rho, tol),), 
-                                          events=single_extinction,
                                           t_dynamics=t_dynamics)
                     self.n = sol.y[:, -1]
                     if not sol:
@@ -100,7 +100,6 @@ class Community:
                 #integrate using numerical integration
                 sol = prune_community(self.model, self.n,
                                       args=((self.A, self.rho, tol),),
-                                      events=single_extinction,
                                       t_dynamics=t_dynamics)
                 if not sol:
                     self.converged = False
@@ -121,7 +120,6 @@ class Community:
         elif self.model.__name__ == 'GLV_hoi':
             sol = prune_community(self.model, self.n,
                                   args=((self.A, self.B, self.rho, tol),), 
-                                  events=single_extinction,
                                   t_dynamics=t_dynamics)
             if not sol:
                 self.converged = False
@@ -258,15 +256,26 @@ class Community:
         return comm
 
     def plotter(self):
-        n_resources = len(self.r)
-        n_consumers = len(self.d)
+        '''
+        Function to plot solution
+        '''
+        #get data
         t = self.t
         abundances = self.abundances_t
-        for sp in range(n_resources + n_consumers):
-            if sp<n_resources:
-                plt.plot(t, abundances[sp], linestyle = '--')   
-            else:
+        #Check type of model
+        try:
+            n_resources = len(self.r)
+            n_consumers = len(self.d)
+            #Plot differently resources and consumers
+            for sp in range(n_resources + n_consumers):
+                if sp<n_resources:
+                    plt.plot(t, abundances[sp], linestyle = '--')   
+                else:
+                    plt.plot(t, abundances[sp])
+        except:
+            for sp in range(self.richness):
                 plt.plot(t, abundances[sp])
+
         plt.xscale('log')
         plt.show()
 
@@ -305,17 +314,14 @@ def is_varying(sol_mat, tol):
     varying = np.any(abs(last_3) > tol)
     return varying
 
-def prune_community(fun, x0, args, events=(single_extinction, is_varying),  
-                    t_dynamics=False):
+def prune_community(fun, x0, args, t_dynamics=False):
     '''
     Function to prune community. Every time a species goes extinct, integration
     restarts with the pruned system
     '''
-    #Extinctions don't triger end of integration, but reaching a constant
-    #solution does
-    single_extinction.terminal = False
-    is_varying.terminal = True
-    t_span = [0, 1e6]
+    import ipdb; ipdb.set_trace(context = 20)
+    single_extinction.terminal = True
+    t_span = [0, 1e3]
     #add tolerance to tuple of arguments
     tol = args[0][-1]
     #get initial number of species
@@ -326,12 +332,12 @@ def prune_community(fun, x0, args, events=(single_extinction, is_varying),
     t_vec = np.array([0])
     while varying:
         try:
-            sol = solve_ivp(fun, t_span, x0, events=events, args=args, 
-                            method='BDF') 
+            sol = solve_ivp(fun, t_span, x0, events=single_extinction, 
+                            args=args, method='BDF') 
             #store times and abundances
             t_vec = cumulative_storing(t_vec, sol.t, time = True)
             ab_mat = cumulative_storing(ab_mat, sol.y)
-            #update solution
+            #update solution counting previous ones
             sol.t = t_vec
             sol.y = ab_mat
             #set species below threshold to 0
