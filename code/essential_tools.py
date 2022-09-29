@@ -1,4 +1,4 @@
-###############################################################################
+##############################################################################
 #IMPORTS
 import copy
 import os
@@ -23,7 +23,6 @@ def GLV(t, x, args):
     (A, rho, tol) = args
     dxdt = (x*(rho + A@x)).T
     return dxdt
-  #draw parameters                                                            
 
 def GLV_hoi(t, x, args):
     '''
@@ -134,6 +133,12 @@ class Community:
             self.abundances_t = cumulative_storing(self.abundances_t, 
                                                     sol.y)
             self.n = sol.y[:, -1]
+            #set to 0 extinct species
+            ind_ext = np.where(self.n < tol)[0]
+            #update presence absence vector
+            self.presence[ind_ext] = False
+            #update richness
+            self.richness -= len(ind_ext) #update richness 
         else:
             print("model not available")
             raise ValueError
@@ -283,9 +288,10 @@ def lemke_howson_wrapper(A, r):
     return x
 
 def single_extinction(t, n, args):
-    tol = args[0][-1]
+    tol = args[-1]
     n = n[n!=0]
-    return np.any(abs(n) < tol) -1
+    g = np.any(abs(n) < tol) -1
+    return g
 
 def is_varying(sol_mat, tol):
     '''
@@ -308,7 +314,6 @@ def prune_community(fun, x0, args, events=(single_extinction, is_varying),
     #Extinctions don't triger end of integration, but reaching a constant
     #solution does
     single_extinction.terminal = False
-    import ipdb; ipdb.set_trace(context = 20)
     is_varying.terminal = True
     t_span = [0, 1e6]
     #add tolerance to tuple of arguments
@@ -370,7 +375,7 @@ def cumulative_storing(old_vector, new_vector, time = False):
     '''
     Concatenate two vectors, either in space (plain concatenation) or in time 
     (plain concatenation plus adding the last element of the left vector to 
-    all the elements of the right vector 
+    all the elements of the right vector).
     '''
     #make vectors have 2 axis 
     dim_old = old_vector.ndim
