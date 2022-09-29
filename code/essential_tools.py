@@ -19,10 +19,11 @@ def GLV(t, x, args):
         rho (nx1): Species growth rates
         tol (float): solution precision
     '''
+    #unpack arguments
+    (A, rho, tol) = args
     dxdt = (x*(rho + A@x)).T
-    if all(x==1):
-        print(dxdt)
     return dxdt
+  #draw parameters                                                            
 
 def GLV_hoi(t, x, args):
     '''
@@ -35,10 +36,9 @@ def GLV_hoi(t, x, args):
         rho (nx1): Species growth rates
         tol (float): solution precision
     '''
+    #unpack arguments
+    (A, B, rho, tol) = args
     #Create used vectors
-    dxdt_glv = (x*(rho + A@x)).T
-    if all(x==1):
-        print(dxdt_glv)
     n = len(x)
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
@@ -88,7 +88,7 @@ class Community:
                 #if it fails, use numerical integration
                 if all(n_eq==0):
                     sol = prune_community(self.model, self.n,
-                                          args=(self.A, self.rho, tol), 
+                                          args=((self.A, self.rho, tol),), 
                                           events=single_extinction,
                                           t_dynamics=t_dynamics)
                     self.n = sol.y[:, -1]
@@ -100,7 +100,7 @@ class Community:
             else: 
                 #integrate using numerical integration
                 sol = prune_community(self.model, self.n,
-                                      args=(self.A, self.rho, tol), 
+                                      args=((self.A, self.rho, tol),),
                                       events=single_extinction,
                                       t_dynamics=t_dynamics)
                 if not sol:
@@ -121,7 +121,7 @@ class Community:
             self.richness -= len(ind_ext) #update richness 
         elif self.model.__name__ == 'GLV_hoi':
             sol = prune_community(self.model, self.n,
-                                  args=(self.A, self.B, self.rho, tol), 
+                                  args=((self.A, self.B, self.rho, tol),), 
                                   events=single_extinction,
                                   t_dynamics=t_dynamics)
             if not sol:
@@ -282,7 +282,8 @@ def lemke_howson_wrapper(A, r):
     except: x = np.array([x])
     return x
 
-def single_extinction(t, n, A, B, r, tol):
+def single_extinction(t, n, args):
+    tol = args[0][-1]
     n = n[n!=0]
     return np.any(abs(n) < tol) -1
 
@@ -307,10 +308,11 @@ def prune_community(fun, x0, args, events=(single_extinction, is_varying),
     #Extinctions don't triger end of integration, but reaching a constant
     #solution does
     single_extinction.terminal = False
+    import ipdb; ipdb.set_trace(context = 20)
     is_varying.terminal = True
     t_span = [0, 1e6]
     #add tolerance to tuple of arguments
-    tol = args[-1]
+    tol = args[0][-1]
     #get initial number of species
     n_sp = len(x0)
     varying = True
@@ -319,7 +321,6 @@ def prune_community(fun, x0, args, events=(single_extinction, is_varying),
     t_vec = np.array([0])
     while varying:
         try:
-            import ipdb; ipdb.set_trace(context = 20)
             sol = solve_ivp(fun, t_span, x0, events=events, args=args, 
                             method='BDF') 
             #store times and abundances
@@ -389,4 +390,3 @@ def cumulative_storing(old_vector, new_vector, time = False):
     return old_vector
 
 ###############################################################################
-
