@@ -9,7 +9,7 @@ import matplotlib.pylab as plt
 
 ###############################################################################
 #MODELS
-def GLV(t, x, A, rho, tol):
+def GLV(t, x, args):
     '''
     n-species Generalized Lotka-Volterra
 
@@ -24,7 +24,7 @@ def GLV(t, x, A, rho, tol):
         print(dxdt)
     return dxdt
 
-def GLV_hoi(t, x, A, B, rho, tol):
+def GLV_hoi(t, x, args):
     '''
     n-species Generalized Lotka-Volterra with higher order interactions
 
