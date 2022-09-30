@@ -42,33 +42,22 @@ def GLV_hoi(t, x, args):
     Ax = A@x
     xBx = [float(x@B[i,:,:]@x[:, np.newaxis]) for i in range(n)]
     dxdt = x*np.array([rho[i] + Ax[i] + xBx[i] for i in range(n)])
-    print('Time: ', t)
     return dxdt
-
-##Test
-#r = np.random.uniform(size=3)
-#A = np.random.uniform(size=(3, 3))
-#B = np.array([[[1, 2, 3], [1,2,3], [1,2,3]],
-#            [[4,5,6], [4,5,6], [4,5,6]],
-#            [[7,8,9], [7,8,9], [7,8,9]]])
-#GLV_hoi(1, np.array([1, 2, 3,]), A, B, r, 1e-6)
 
 ###############################################################################
 
 ###############################################################################
 #CLASSES
 class Community:
-    def __init__(self, n, model, A=None, B=None, C=None, D=None, r=None,
-                 rho=None, d=None, l=None):
+    def __init__(self, n, model, A=None, B=None, C=None, r=None, rho=None, 
+                 d=None):
         self.n = n #end-point abundances vector
         self.A = A #interaction matrix
         self.B = B #higher order interaction matrix
         self.C = C #resource preferences matrix
-        self.D = D #crossfeeding matrix 
         self.r = r #resource growth rate
         self.d = d #species death rate
         self.rho = rho #GLV growthrate
-        self.l = l #leakage
         self.model = model #model on which the instance of the class is based
         self.presence = np.zeros(len(n), dtype = bool)
         ind_extant = np.where(n > 0)[0]
@@ -319,9 +308,8 @@ def prune_community(fun, x0, args, t_dynamics=False):
     Function to prune community. Every time a species goes extinct, integration
     restarts with the pruned system
     '''
-    import ipdb; ipdb.set_trace(context = 20)
     single_extinction.terminal = True
-    t_span = [0, 1e3]
+    t_span = [0, 1e6]
     #add tolerance to tuple of arguments
     tol = args[0][-1]
     #get initial number of species
@@ -345,7 +333,7 @@ def prune_community(fun, x0, args, t_dynamics=False):
             ind_ext = np.where(end_point < tol)[0]
             end_point[ind_ext] = int(0)
             #update number of species
-            n_sp = len(np.where(end_point>0)) 
+            n_sp = len(np.where(end_point>0)[0]) 
             #initial condition of next integration is end point of previous one
             x0 = end_point
             #check if solution is constant
