@@ -138,6 +138,7 @@ class Community:
         abundances of species to 0, while retaining the same dimension).
         '''
         #check for correct input
+        import ipdb; ipdb.set_trace(context = 20)
         if len(np.unique(remove_ind)) != len(remove_ind):
             raise TypeError(\
             'Index of species to be removed cannot contain repeated elements')
