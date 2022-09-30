@@ -73,7 +73,7 @@ class Community:
         if self.model.__name__ == 'GLV':
             if not t_dynamics:
                 #integrate using lemke-howson algorithm
-                n_eq = lemke_howson_wrapper(self.A, self.rho)
+                n_eq = lemke_howson_wrapper(-self.A, self.rho)
                 #if it fails, use numerical integration
                 if all(n_eq==0):
                     sol = prune_community(self.model, self.n,
@@ -87,6 +87,7 @@ class Community:
                     self.n = n_eq
             else: 
                 #integrate using numerical integration
+                import ipdb; ipdb.set_trace(context = 20)
                 sol = prune_community(self.model, self.n,
                                       args=((self.A, self.rho, tol),),
                                       t_dynamics=t_dynamics)
@@ -138,7 +139,6 @@ class Community:
         abundances of species to 0, while retaining the same dimension).
         '''
         #check for correct input
-        import ipdb; ipdb.set_trace(context = 20)
         if len(np.unique(remove_ind)) != len(remove_ind):
             raise TypeError(\
             'Index of species to be removed cannot contain repeated elements')
@@ -162,9 +162,8 @@ class Community:
                 #reduce richness accordingly
                 new_comm.richness -= n_rem
                 #remove temporal dynamics of selected species
-                if np.any(self.t):
-                    new_comm.abundances_t = np.delete(new_comm.abundances_t, 
-                                                      remove_ind, axis=0)
+                new_comm.abundances_t = np.delete(new_comm.abundances_t, 
+                                                  remove_ind, axis=0)
                 #remove elements from matrix C if it exists
                 if np.any(self.C):
                     remove_ind_spp = remove_ind[remove_ind < len(self.d)]
