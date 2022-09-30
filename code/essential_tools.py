@@ -87,7 +87,6 @@ class Community:
                     self.n = n_eq
             else: 
                 #integrate using numerical integration
-                import ipdb; ipdb.set_trace(context = 20)
                 sol = prune_community(self.model, self.n,
                                       args=((self.A, self.rho, tol),),
                                       t_dynamics=t_dynamics)
@@ -249,6 +248,7 @@ class Community:
         Function to plot solution
         '''
         #get data
+        import ipdb; ipdb.set_trace(context = 20)
         t = self.t
         abundances = self.abundances_t
         #Check type of model
@@ -262,7 +262,7 @@ class Community:
                 else:
                     plt.plot(t, abundances[sp])
         except:
-            for sp in range(self.richness):
+            for sp in range(self.presence):
                 plt.plot(t, abundances[sp])
 
         plt.xscale('log')
