@@ -22,6 +22,8 @@ def GLV(t, x, args):
     #unpack arguments
     (A, rho, tol) = args
     dxdt = (x*(rho + A@x)).T
+    if any(dxdt>1e5):
+        import ipdb; ipdb.set_trace(context = 20)
     return dxdt
 
 def GLV_hoi(t, x, args):
@@ -102,6 +104,9 @@ class Community:
                 self.n = sol.y[:, -1]
             #set to 0 extinct species
             ind_ext = np.where(self.n < tol)[0]
+            if delete_history:
+                self = self.remove_spp(ind_ext)
+            else:
             #update presence absence vector
             self.presence[ind_ext] = False
             #update richness
@@ -235,6 +240,7 @@ class Community:
         from the presence vector, and temporal dynamics
         '''
         #remove extinct species
+        import ipdb; ipdb.set_trace(context = 20)
         rem_ind = np.where(self.presence == 0)[0]
         comm = self.remove_spp(rem_ind)
         #remove from presence vector
@@ -248,7 +254,6 @@ class Community:
         Function to plot solution
         '''
         #get data
-        import ipdb; ipdb.set_trace(context = 20)
         t = self.t
         abundances = self.abundances_t
         #Check type of model
@@ -262,7 +267,7 @@ class Community:
                 else:
                     plt.plot(t, abundances[sp])
         except:
-            for sp in range(self.presence):
+            for sp in range(len(self.n)):
                 plt.plot(t, abundances[sp])
 
         plt.xscale('log')
@@ -370,6 +375,11 @@ def cumulative_storing(old_vector, new_vector, time = False):
     Concatenate two vectors, either in space (plain concatenation) or in time 
     (plain concatenation plus adding the last element of the left vector to 
     all the elements of the right vector).
+
+    Parameters:
+        old_vector: original vector
+        new_vector: vector to add
+        time (bool): whether or not the vectors are time vectors
     '''
     #make vectors have 2 axis 
     dim_old = old_vector.ndim
@@ -384,6 +394,7 @@ def cumulative_storing(old_vector, new_vector, time = False):
     else:
         vector_add = new_vector
         if time:
+            #add last element of old vector to all elements of new vector
             vector_add = old_vector[:,-1] + new_vector
         old_vector = np.hstack((old_vector, vector_add[:,1:]))
     return old_vector
